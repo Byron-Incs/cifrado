@@ -1,89 +1,93 @@
 package org.example;
+
 import java.util.Scanner;
 import org.json.JSONObject;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.io.FileReader;
 import org.json.JSONTokener;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.Key;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import java.util.Base64;
 
 public class Main {
+    private static final String LLAVE = "byronbyronbyron1";
+
     public static void main(String[] args) {
-        boolean state = true;
         Scanner leer = new Scanner(System.in);
 
-        while (state) {
+        while (true) {
             String opc = "";
 
             System.out.println("MENU");
             System.out.println("1_escritura");
             System.out.println("2_lectura");
+            System.out.println("3_terminar");
 
             opc = leer.next();
 
             if (opc.equals("1")) {
-                System.out.print("Ingresa el texto: ");
-                leer.nextLine();
-                String input = leer.nextLine();
-
-                StringBuilder result = new StringBuilder();
-
-                for (char character : input.toCharArray()) {
-                    int asciiValue = (int) character;
-                    String binaryValue = Integer.toBinaryString(asciiValue);
-                    result.append(binaryValue).append(" ");
-                }
-
-                System.out.println(result);
-
-                JSONObject msj = new JSONObject();
-                msj.put("mensaje_en_binario", result.toString());
-
-                // Crear el archivo JSON
-                try (FileWriter file = new FileWriter("mensaje.json")) {
-                    file.write(msj.toString());
-                    System.out.println("Archivo JSON creado exitosamente en la carpeta del proyecto :).");
-                } catch (IOException e) {
-                    System.out.println("Ocurrió un error al crear el archivo JSON: " + e.getMessage());
-                }
-
-                String opcS = "";
-
-                System.out.println("¿Terminar? (si/no)");
-                opcS = leer.next();
-                if (opcS.equals("si")) {
-                    state = false;
-                }
-
+                escribir(leer);
             } else if (opc.equals("2")) {
-                try {
-                    FileReader fileReader = new FileReader("mensaje.json");
-                    JSONTokener tokener = new JSONTokener(fileReader);
-                    JSONObject jsonObject = new JSONObject(tokener);
-
-                    String mensajeBinario = jsonObject.getString("mensaje_en_binario");
-                    System.out.println("Mensaje en binario: " + mensajeBinario);
-
-
-                    String[] binaryValues = mensajeBinario.split(" ");
-                    StringBuilder result = new StringBuilder();
-
-                    for (String binaryValue : binaryValues) {
-                        try {
-                            int asciiValue = Integer.parseInt(binaryValue, 2);
-                            char character = (char) asciiValue;
-                            result.append(character);
-                        } catch (NumberFormatException e) {
-                            System.out.println("Error en el valor binario: " + binaryValue);
-                        }
-                    }
-
-                    System.out.println("Texto resultante: " + result.toString());
-
-                } catch (IOException e) {
-                    System.out.println("Error al leer el archivo JSON: " + e.getMessage());
-                }
+                leer();
+            } else if (opc.equals("3")) {
+                leer.close();
+                break;
+            } else {
+                System.out.println("Opción inválida");
             }
         }
     }
-}
 
+    private static void escribir(Scanner leer) {
+        leer.nextLine(); // Limpia el buffer del Scanner
+        System.out.print("Ingresa el texto: ");
+        String input = leer.nextLine();
+
+        try {
+            SecretKey key = new SecretKeySpec(LLAVE.getBytes(StandardCharsets.UTF_8), "AES");
+
+            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, key);
+            byte[] cifrado = cipher.doFinal(input.getBytes(StandardCharsets.UTF_8));
+
+            String cifradoBase64 = Base64.getEncoder().encodeToString(cifrado);
+
+            JSONObject msj = new JSONObject();
+            msj.put("mensaje_cifrado", cifradoBase64);
+
+            try (FileWriter file = new FileWriter("mensaje.json")) {
+                file.write(msj.toString());
+                System.out.println("Archivo JSON creado exitosamente en la carpeta del proyecto :).");
+            } catch (IOException e) {
+                System.out.println("Ocurrió un error al crear el archivo JSON: " + e.getMessage());
+            }
+        } catch (Exception e) {
+            System.out.println("Ocurrió un error al cifrar el mensaje: " + e.getMessage());
+        }
+    }
+
+    private static void leer() {
+        try {
+            FileReader file = new FileReader("mensaje.json");
+            JSONObject msj = new JSONObject(new JSONTokener(file));
+            String cifradoBase64 = msj.getString("mensaje_cifrado");
+            byte[] cifrado = Base64.getDecoder().decode(cifradoBase64);
+
+            SecretKey key = new SecretKeySpec(LLAVE.getBytes(StandardCharsets.UTF_8), "AES");
+
+            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+            cipher.init(Cipher.DECRYPT_MODE, key);
+            byte[] descifrado = cipher.doFinal(cifrado);
+
+            System.out.println("El mensaje descifrado es: " + new String(descifrado, StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            System.out.println("Ocurrió un error al leer el archivo JSON: " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("Ocurrió un error al descifrar el mensaje: " + e.getMessage());
+        }
+    }
+}
