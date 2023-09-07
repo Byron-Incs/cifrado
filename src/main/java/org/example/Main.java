@@ -1,38 +1,37 @@
 package org.example;
-
 import java.util.Scanner;
-
-
 public class Main {
-    private static final String LLAVE = "byronbyronbyron1";
 
     public static void main(String[] args) {
-        func cifrado = new func();
         Scanner leer = new Scanner(System.in);
+        lectura_Y_escritura obj = new lectura_Y_escritura();
+        int opc = 0;
 
-        while (true) {
-            String opc = "";
+        while (opc != 3){
 
-            System.out.println("MENU");
-            System.out.println("1_escritura");
-            System.out.println("2_lectura");
-            System.out.println("3_terminar");
+            System.out.println("menu");
+            System.out.println("1- leer ");
+            System.out.println("2- escribir ");
+            System.out.println("3- terminar");
 
-            opc = leer.next();
+            opc=leer.nextInt();
 
-            if (opc.equals("1")) {
-                cifrado.escribir();
-            } else if (opc.equals("2")) {
-                cifrado.leer();
-            } else if (opc.equals("3")) {
-                leer.close();
-                break;
+
+            if (opc == 1){
+                obj.leer();
+
+            } else if (opc == 2) {
+                obj.escribir();
             } else {
-                System.out.println("Opción inválida");
+                System.out.println("opcion invalida");
+
             }
+
         }
+
+
     }
-
-
-
 }
+
+
+
