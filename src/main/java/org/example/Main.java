@@ -22,7 +22,7 @@ public class Main {
 
             } else if (opc == 2) {
                 obj.escribir();
-            } else {
+            } else if (opc != 3) {
                 System.out.println("opcion invalida");
 
             }
